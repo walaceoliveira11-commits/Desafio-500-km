@@ -1,1 +1,11 @@
-{"pessoas":[],"corridas":[]}
+{
+ "pessoas": [
+  {
+   "id": "zabpbq27",
+   "nome": "Walace Oliveira",
+   "cor": "#2F6FDE",
+   "criado": "2026-10-02T21:26:07.668Z"
+  }
+ ],
+ "corridas": []
+}
