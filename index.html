@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desafio 500 km de outubro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --ink:#16263A; --muted:#5D6B7C; --line:#D6DCE3;
+  --road:#26384F; --paint:#F2B705; --good:#1E9E6A; --bad:#C8434F; --field:#F6F8FA;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1A27; --surface:#172536; --ink:#E7EDF4; --muted:#93A3B5; --line:#2A3B50;
+    --road:#0A121C; --paint:#F2B705; --good:#3CC48C; --bad:#F06B76; --field:#1D2E42;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1A27; --surface:#172536; --ink:#E7EDF4; --muted:#93A3B5; --line:#2A3B50;
+  --road:#0A121C; --paint:#F2B705; --good:#3CC48C; --bad:#F06B76; --field:#1D2E42;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1,h2,.num{font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:.01em}
+h1{font-size:2rem;line-height:1.1;margin:0 0 4px;font-weight:800}
+h2{font-size:1.4rem;margin:0 0 12px;font-weight:700}
+.sub{color:var(--muted);margin:0}
+.notice{margin:14px 0 0;padding:10px 12px;border-left:4px solid var(--paint);background:var(--surface);font-size:.95rem}
+.notice:empty{display:none}
+
+/* Hero: a estrada */
+.hero{margin:22px 0 28px}
+.total{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.total .num{font-size:4.2rem;line-height:1;font-weight:800}
+.total .of{font-size:1.15rem;color:var(--muted)}
+.road{position:relative;margin:16px 0 6px;height:58px;background:var(--road);border-radius:6px;overflow:hidden;display:flex}
+.road::after{content:"";position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;
+  background:repeating-linear-gradient(90deg,var(--paint) 0 22px,transparent 22px 40px);opacity:.85;pointer-events:none}
+.seg{height:100%;transition:width .5s ease}
+.marks{display:flex;justify-content:space-between;font-family:"Barlow Condensed",system-ui,sans-serif;color:var(--muted);font-size:.9rem}
+.pace{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.pace div{background:var(--surface);border-radius:8px;padding:10px 12px}
+.pace .num{display:block;font-size:1.7rem;font-weight:700;line-height:1.1}
+.pace small{color:var(--muted);font-size:.85rem}
+.status{margin:12px 0 0;font-weight:600}
+.status.ok{color:var(--good)} .status.late{color:var(--bad)}
+
+section{background:var(--surface);border-radius:10px;padding:18px 16px;margin-top:16px}
+label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:10px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--paint);outline-offset:1px}
+.form{display:grid;grid-template-columns:1.4fr 1fr .8fr;gap:10px;align-items:end}
+.form .full{grid-column:1/-1}
+button{font:600 1rem "Barlow",system-ui,sans-serif;border:0;border-radius:6px;padding:11px 16px;cursor:pointer;background:var(--road);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.primary{background:var(--paint);color:#16263A}}
+:root[data-theme="dark"] button.primary{background:var(--paint);color:#16263A}
+button:disabled{opacity:.45;cursor:not-allowed}
+.ghost{background:transparent;color:var(--muted);padding:6px 8px;font-size:.9rem}
+.ghost:hover{color:var(--bad)}
+.msg{min-height:1.4em;margin:8px 0 0;font-size:.92rem;color:var(--good)}
+.msg.err{color:var(--bad)}
+
+.rank{list-style:none;margin:0;padding:0}
+.rank li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rank li:first-child{border-top:0}
+.pos{font-family:"Barlow Condensed",system-ui,sans-serif;font-weight:700;font-size:1.3rem;color:var(--muted);text-align:center}
+.who{min-width:0}
+.who strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:8px;border-radius:4px;background:var(--field);margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px}
+.kms{text-align:right;font-family:"Barlow Condensed",system-ui,sans-serif;font-size:1.35rem;font-weight:700;line-height:1.1}
+.kms small{display:block;font:400 .8rem "Barlow",system-ui,sans-serif;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+.chart{overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:520px;height:auto}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:6px}
+.legend span::before{content:"";display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;background:var(--c)}
+.legend .dash::before{background:repeating-linear-gradient(90deg,var(--c) 0 5px,transparent 5px 9px)}
+
+.hist{list-style:none;margin:0;padding:0;max-height:420px;overflow-y:auto}
+.hist li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.hist li:first-child{border-top:0}
+.hist .d{color:var(--muted);font-size:.9rem;width:52px;flex:none}
+.hist .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist .k{font-family:"Barlow Condensed",system-ui,sans-serif;font-weight:700;font-size:1.15rem}
+.empty{color:var(--muted);margin:0}
+
+.people{display:flex;gap:10px}
+.people input{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;list-style:none;padding:0}
+.chips li{display:flex;align-items:center;background:var(--field);border-radius:20px;padding:4px 4px 4px 12px}
+.chips button{background:transparent;color:var(--muted);padding:2px 9px;font-size:1.05rem;line-height:1}
+.chips button:hover{color:var(--bad)}
+
+
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sync{font-size:.85rem;color:var(--muted);white-space:nowrap}
+@media (max-width:560px){
+  .total .num{font-size:3.4rem}
+  .form{grid-template-columns:1fr 1fr}
+  .form .who-f{grid-column:1/-1}
+  .pace .num{font-size:1.4rem}
+}
+@media (prefers-reduced-motion: reduce){.seg{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="top"><h1>Desafio de outubro</h1><span class="sync" id="sync"></span></div>
+    <p class="sub">Meta do grupo: 500 km corridos de 1º a 31 de outubro de 2026.</p>
+    <p class="notice" id="notice">Carregando registros…</p>
+  </header>
+
+  <div class="hero">
+    <div class="total"><span class="num" id="total">0</span><span class="of">de 500 km</span></div>
+    <div class="road" id="road" role="img" aria-label="Progresso do grupo"></div>
+    <div class="marks"><span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span></div>
+    <div class="pace">
+      <div><span class="num" id="left">500</span><small>km faltando</small></div>
+      <div><span class="num" id="days">31</span><small>dias restantes</small></div>
+      <div><span class="num" id="need">16,1</span><small>km por dia para fechar</small></div>
+    </div>
+    <p class="status" id="status"></p>
+  </div>
+
+  <section>
+    <h2>Registrar corrida</h2>
+    <div class="form">
+      <div class="who-f"><label for="fPerson">Quem correu</label><select id="fPerson"></select></div>
+      <div><label for="fDate">Data</label><input type="date" id="fDate" min="2026-10-01" max="2026-10-31"></div>
+      <div><label for="fKm">Km</label><input id="fKm" inputmode="decimal" placeholder="5,2" autocomplete="off"></div>
+      <div class="full"><button class="primary" id="fSave" style="width:100%">Registrar corrida</button></div>
+    </div>
+    <p class="msg" id="fMsg" role="status"></p>
+  </section>
+
+  <section>
+    <h2>Ranking</h2>
+    <ul class="rank" id="rank"></ul>
+  </section>
+
+  <section>
+    <h2>Evolução no mês</h2>
+    <div class="chart" id="chart"></div>
+    <div class="legend">
+      <span style="--c:var(--paint)">Acumulado do grupo</span>
+      <span class="dash" style="--c:var(--muted)">Ritmo ideal até 500 km</span>
+      <span style="--c:#7d8fa3">Km no dia</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Histórico</h2>
+    <ul class="hist" id="hist"></ul>
+  </section>
+
+  <section id="acesso">
+    <h2>Acesso para registrar</h2>
+    <div id="semChave">
+      <p class="sub" style="margin-bottom:10px">Cole a chave de acesso que o organizador enviou no grupo. Ela fica guardada só neste aparelho.</p>
+      <div class="people"><input id="tok" type="password" placeholder="github_pat_…" autocomplete="off"><button id="tokOk">Salvar chave</button></div>
+    </div>
+    <div id="comChave" hidden class="people" style="align-items:center;justify-content:space-between">
+      <span>Este aparelho pode registrar corridas.</span><button class="ghost" id="tokSair">Esquecer chave</button>
+    </div>
+    <p class="msg" id="tMsg" role="status"></p>
+  </section>
+
+  <section>
+    <h2>Participantes</h2>
+    <div class="people">
+      <input id="pName" placeholder="Nome da pessoa" maxlength="40" autocomplete="off">
+      <button id="pAdd">Adicionar</button>
+    </div>
+    <ul class="chips" id="chips"></ul>
+    <p class="msg" id="pMsg" role="status"></p>
+  </section>
+
+  <section>
+    <h2>Baixar dados</h2>
+    <p class="sub" style="margin-bottom:10px">Planilha com todos os lançamentos do mês, para abrir no Excel.</p>
+    <button id="csv">Baixar planilha (CSV)</button>
+  </section>
+</div>
+
+<script>
+/* ===== CONFIGURAÇÃO (só precisa mexer se a página NÃO estiver em usuario.github.io/repositorio) ===== */
+const CONFIG = { owner: "", repo: "", branch: "main", arquivo: "dados.json" };
+/* =================================================================================================== */
+
+if (location.hostname.endsWith(".github.io")) {
+  CONFIG.owner = CONFIG.owner || location.hostname.split(".")[0];
+  CONFIG.repo = CONFIG.repo || location.pathname.split("/")[1] || location.hostname;
+}
+const START = "2026-10-01", END = "2026-10-31", GOAL = 500, NDAYS = 31;
+const COLORS = ["#2F6FDE","#E0A100","#1E9E6A","#D9485F","#7A4FD0","#0F9BB5","#E46F1B","#8A9AAB","#B0388C","#4C8B2B","#3D5AFE","#A1662F"];
+const API = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${CONFIG.arquivo}`;
+const configured = !!(CONFIG.owner && CONFIG.repo);
+let dados = {pessoas: [], corridas: []}, people = [], entries = [], busy = false;
+
+const $ = id => document.getElementById(id);
+const fmt = (n, d = 1) => n.toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const token = () => store.get("gh_token500") || "";
+const novoId = () => Math.random().toString(36).slice(2, 10);
+
+function localISO(d = new Date()) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function clampDate(s) { return s < START ? START : s > END ? END : s; }
+function dayIndex(s) { return Number(s.slice(8, 10)); }
+function ddmm(s) { return s.slice(8,10) + "/" + s.slice(5,7); }
+function setMsg(el, text, err) { el.textContent = text; el.classList.toggle("err", !!err); if (text && !err) setTimeout(() => { if (el.textContent === text) el.textContent = ""; }, 4000); }
+function personById(id) { return people.find(p => p.id === id); }
+
+/* ---------- GitHub ---------- */
+const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, "")), c => c.charCodeAt(0)));
+const b64enc = t => { const u = new TextEncoder().encode(t); let s = ""; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192)); return btoa(s); };
+function headers(auth) {
+  const h = {"Accept": "application/vnd.github+json"};
+  if (auth && token()) h.Authorization = "Bearer " + token();
+  return h;
+}
+async function lerArquivo() {
+  const r = await fetch(`${API}?ref=${CONFIG.branch}&t=${Date.now()}`, {headers: headers(true), cache: "no-store"});
+  if (r.status === 404) return {json: {pessoas: [], corridas: []}, sha: null};
+  if (r.status === 403 || r.status === 429) { // limite de leitura sem chave: usa a cópia pública
+    const raw = await fetch(`https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/${CONFIG.arquivo}?t=${Date.now()}`, {cache: "no-store"});
+    if (!raw.ok) throw new Error("leitura bloqueada");
+    return {json: await raw.json(), sha: null};
+  }
+  if (!r.ok) throw new Error("erro " + r.status);
+  const j = await r.json();
+  return {json: JSON.parse(b64dec(j.content)), sha: j.sha};
+}
+/* Aplica a alteração sobre a versão mais recente do arquivo; se alguém salvou junto, relê e tenta de novo. */
+async function gravar(alterar, mensagem) {
+  if (!token()) throw new Error("Cole a chave de acesso na seção \"Acesso para registrar\".");
+  busy = true;
+  try {
+    for (let tent = 0; tent < 4; tent++) {
+      const {json, sha} = await lerArquivo();
+      json.pessoas = json.pessoas || []; json.corridas = json.corridas || [];
+      alterar(json);
+      const body = {message: mensagem, content: b64enc(JSON.stringify(json, null, 1)), branch: CONFIG.branch};
+      if (sha) body.sha = sha;
+      const r = await fetch(API, {method: "PUT", headers: {...headers(true), "Content-Type": "application/json"}, body: JSON.stringify(body)});
+      if (r.ok) { aplicar(json); return; }
+      if (r.status === 409 || r.status === 422) { await new Promise(ok => setTimeout(ok, 400 + Math.random() * 800)); continue; }
+      if (r.status === 401) throw new Error("Chave inválida ou vencida. Peça uma nova ao organizador.");
+      if (r.status === 403 || r.status === 404) throw new Error("Esta chave não tem permissão para gravar neste repositório.");
+      throw new Error("GitHub respondeu erro " + r.status + ".");
+    }
+    throw new Error("Muita gente salvando ao mesmo tempo.");
+  } finally { busy = false; }
+}
+function aplicar(j) {
+  dados = j;
+  people = (j.pessoas || []).filter(p => !p.removido).map(p => ({id: p.id, name: p.nome, color: p.cor}));
+  entries = (j.corridas || []).filter(e => !e.apagado && e.km > 0 && e.data).map(e => ({id: e.id, date: e.data, pid: e.pid, km: e.km, ts: e.ts || 0}));
+  store.set("cache500", JSON.stringify(j));
+  $("sync").textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+  render();
+}
+async function carregar() {
+  if (!configured || busy) return;
+  try { const {json} = await lerArquivo(); $("notice").textContent = ""; aplicar(json); }
+  catch (e) { $("notice").textContent = "Não foi possível ler os dados agora. Mostrando os últimos carregados neste aparelho."; }
+}
+
+/* ---------- desenho ---------- */
+function totals() {
+  const byP = {}, byDay = new Array(NDAYS + 1).fill(0); let sum = 0;
+  for (const e of entries) {
+    if (e.date < START || e.date > END) continue;
+    byP[e.pid] = byP[e.pid] || {km: 0, runs: 0};
+    byP[e.pid].km += e.km; byP[e.pid].runs++;
+    byDay[dayIndex(e.date)] += e.km; sum += e.km;
+  }
+  return {byP, byDay, sum};
+}
+
+function render() {
+  const {byP, byDay, sum} = totals();
+  const today = localISO();
+  const inWindow = today >= START && today <= END;
+  const remDays = today > END ? 0 : inWindow ? NDAYS - dayIndex(today) + 1 : NDAYS;
+  const left = Math.max(0, GOAL - sum);
+  $("total").textContent = fmt(sum);
+  $("left").textContent = fmt(left);
+  $("days").textContent = remDays;
+  $("need").textContent = left === 0 ? "0" : remDays ? fmt(left / remDays) : "–";
+
+  const scale = Math.max(GOAL, sum);
+  const ranked = people.map(p => ({...p, km: byP[p.id]?.km || 0, runs: byP[p.id]?.runs || 0})).sort((a, b) => b.km - a.km);
+  $("road").innerHTML = ranked.filter(p => p.km > 0)
+    .map(p => `<div class="seg" style="width:${(p.km / scale) * 100}%;background:${p.color}" title="${esc(p.name)}: ${fmt(p.km)} km"></div>`).join("");
+
+  const st = $("status");
+  if (sum >= GOAL) { st.textContent = "Meta batida! O grupo passou dos 500 km."; st.className = "status ok"; }
+  else if (inWindow) {
+    const diff = sum - GOAL * (dayIndex(today) - 1) / NDAYS;
+    st.textContent = diff >= 0 ? `Grupo ${fmt(diff)} km à frente do ritmo ideal.` : `Grupo ${fmt(-diff)} km atrás do ritmo ideal.`;
+    st.className = "status " + (diff >= 0 ? "ok" : "late");
+  } else if (today > END) { st.textContent = `Desafio encerrado com ${fmt(sum)} km.`; st.className = "status late"; }
+  else st.textContent = "";
+
+  const maxKm = Math.max(1, ...ranked.map(p => p.km));
+  $("rank").innerHTML = ranked.length ? ranked.map((p, i) => `
+    <li><span class="pos">${i + 1}</span>
+      <div class="who"><strong><span class="dot" style="background:${p.color}"></span>${esc(p.name)}</strong>
+        <div class="bar"><i style="width:${(p.km / maxKm) * 100}%;background:${p.color}"></i></div></div>
+      <div class="kms">${fmt(p.km)} km<small>${p.runs} ${p.runs === 1 ? "corrida" : "corridas"}, ${sum ? fmt(p.km / sum * 100, 0) : 0}% do total</small></div>
+    </li>`).join("") : `<p class="empty">Cadastre os participantes lá embaixo para começar.</p>`;
+
+  const sel = $("fPerson"), cur = sel.value || store.get("ultimaPessoa");
+  sel.innerHTML = people.length ? people.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("") : `<option value="">Cadastre alguém primeiro</option>`;
+  if (people.some(p => p.id === cur)) sel.value = cur;
+
+  const pode = configured && !!token();
+  $("chips").innerHTML = people.map(p => `<li><span class="dot" style="background:${p.color}"></span>${esc(p.name)}
+    ${pode ? `<button aria-label="Remover ${esc(p.name)}" data-rm="${p.id}">×</button>` : ""}</li>`).join("");
+
+  const hist = entries.slice().sort((a, b) => b.date.localeCompare(a.date) || b.ts - a.ts);
+  $("hist").innerHTML = hist.length ? hist.map(e => {
+    const p = personById(e.pid);
+    return `<li><span class="d">${ddmm(e.date)}</span>
+      <span class="n"><span class="dot" style="background:${p ? p.color : "#999"}"></span>${esc(p ? p.name : "Removido")}</span>
+      <span class="k">${fmt(e.km)} km</span>
+      ${pode ? `<button class="ghost" data-del="${e.id}" aria-label="Apagar registro">Apagar</button>` : ""}</li>`;
+  }).join("") : `<p class="empty">Nenhuma corrida registrada ainda.</p>`;
+
+  $("semChave").hidden = !!token(); $("comChave").hidden = !token();
+  drawChart(byDay, today);
+  ["fPerson","fDate","fKm","fSave","pName","pAdd"].forEach(id => $(id).disabled = !pode || (id === "fSave" && !people.length));
+}
+
+function drawChart(byDay, today) {
+  const W = 620, H = 230, L = 36, R = 10, T = 12, B = 26, iw = W - L - R, ih = H - T - B;
+  const lastDay = today < START ? 0 : today > END ? NDAYS : dayIndex(today);
+  let acc = 0; const cum = [0];
+  for (let d = 1; d <= NDAYS; d++) { acc += byDay[d]; cum.push(acc); }
+  const ymax = Math.max(GOAL, acc) * 1.05;
+  const x = d => L + (d / NDAYS) * iw, y = v => T + ih - (v / ymax) * ih;
+  const maxDay = Math.max(1, ...byDay), step = iw / NDAYS, bw = step * 0.6;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Acumulado de km no mês">`;
+  for (let v = 0; v <= GOAL; v += 100) s += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`;
+  for (let d = 1; d <= NDAYS; d++) {
+    const cx = x(d) - step / 2;
+    if (byDay[d] > 0) { const h = (byDay[d] / maxDay) * ih * 0.35; s += `<rect x="${cx - bw/2}" y="${T+ih-h}" width="${bw}" height="${h}" fill="#7d8fa3" opacity=".55"><title>${d}/10: ${fmt(byDay[d])} km</title></rect>`; }
+    if (d === 1 || d % 5 === 0) s += `<text x="${cx}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${d}</text>`;
+  }
+  s += `<line x1="${x(0)}" y1="${y(0)}" x2="${x(NDAYS)}" y2="${y(GOAL)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  if (lastDay > 0) {
+    s += `<polyline points="${cum.slice(0, lastDay + 1).map((v, d) => `${x(d)},${y(v)}`).join(" ")}" fill="none" stroke="var(--paint)" stroke-width="3" stroke-linejoin="round"/>`;
+    s += `<circle cx="${x(lastDay)}" cy="${y(cum[lastDay])}" r="4.5" fill="var(--paint)"/>`;
+  }
+  $("chart").innerHTML = s + `</svg>`;
+}
+
+/* ---------- ações ---------- */
+async function addRun() {
+  const msg = $("fMsg"), pid = $("fPerson").value, date = $("fDate").value;
+  const km = Math.round(parseFloat(($("fKm").value || "").replace(",", ".")) * 100) / 100;
+  if (!pid) return setMsg(msg, "Escolha quem correu.", true);
+  if (!date || date < START || date > END) return setMsg(msg, "A data precisa estar entre 01/10 e 31/10.", true);
+  if (!(km > 0) || km > 100) return setMsg(msg, "Informe a distância em km (ex.: 5,2).", true);
+  const nome = personById(pid)?.name || "";
+  const btn = $("fSave"); btn.disabled = true; btn.textContent = "Salvando…";
+  try {
+    await gravar(j => j.corridas.push({id: novoId(), data: date, pid, nome, km, ts: Date.now()}), `Corrida: ${nome}, ${fmt(km)} km em ${ddmm(date)}`);
+    store.set("ultimaPessoa", pid); $("fKm").value = "";
+    setMsg(msg, `${fmt(km)} km registrados para ${nome}.`);
+  } catch (e) { setMsg(msg, "Não salvou. " + e.message, true); }
+  btn.textContent = "Registrar corrida"; render();
+}
+
+async function addPerson() {
+  const msg = $("pMsg"), name = $("pName").value.trim().replace(/\s+/g, " ").slice(0, 40);
+  if (!name) return setMsg(msg, "Digite um nome.", true);
+  if (people.some(p => p.name.toLowerCase() === name.toLowerCase())) return setMsg(msg, "Esse nome já está cadastrado.", true);
+  $("pAdd").disabled = true;
+  try {
+    await gravar(j => {
+      if (j.pessoas.some(p => !p.removido && p.nome.toLowerCase() === name.toLowerCase())) return;
+      const used = new Set(j.pessoas.filter(p => !p.removido).map(p => p.cor));
+      j.pessoas.push({id: novoId(), nome: name, cor: COLORS.find(c => !used.has(c)) || COLORS[j.pessoas.length % COLORS.length], criado: new Date().toISOString()});
+    }, `Participante: ${name}`);
+    $("pName").value = ""; setMsg(msg, `${name} entrou no desafio.`);
+  } catch (e) { setMsg(msg, e.message, true); }
+  render();
+}
+
+async function removePerson(id) {
+  const p = personById(id); if (!p) return;
+  const n = entries.filter(e => e.pid === id).length;
+  if (!confirm(n ? `Remover ${p.name} e tirar do placar as ${n} corridas dessa pessoa? (ficam guardadas no histórico)` : `Remover ${p.name}?`)) return;
+  const quando = new Date().toISOString();
+  try {
+    await gravar(j => {
+      j.pessoas.forEach(x => { if (x.id === id) x.removido = quando; });
+      j.corridas.forEach(x => { if (x.pid === id && !x.apagado) x.apagado = quando; });
+    }, `Remove participante: ${p.name}`);
+  } catch (e) { setMsg($("pMsg"), e.message, true); }
+}
+
+async function deleteRun(id) {
+  const e = entries.find(x => x.id === id); if (!e) return;
+  const p = personById(e.pid);
+  if (!confirm(`Apagar ${fmt(e.km)} km de ${p ? p.name : "registro"} em ${ddmm(e.date)}?`)) return;
+  try { await gravar(j => j.corridas.forEach(x => { if (x.id === id) x.apagado = new Date().toISOString(); }), `Apaga corrida: ${p ? p.name : ""} ${ddmm(e.date)}`); }
+  catch (err) { alert("Não apagou. " + err.message); }
+}
+
+async function salvarChave() {
+  const msg = $("tMsg"), t = $("tok").value.trim();
+  if (!t) return setMsg(msg, "Cole a chave.", true);
+  try {
+    const r = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`, {headers: {"Accept": "application/vnd.github+json", "Authorization": "Bearer " + t}});
+    if (!r.ok) throw new Error();
+    const j = await r.json();
+    if (j.permissions && !j.permissions.push) return setMsg(msg, "Essa chave só permite leitura. Peça ao organizador a chave com permissão de gravação.", true);
+    store.set("gh_token500", t); $("tok").value = ""; setMsg(msg, "Chave salva. Agora você pode registrar."); render(); carregar();
+  } catch (e) { setMsg(msg, "Chave não reconhecida para este repositório.", true); }
+}
+
+function baixarCSV() {
+  const linhas = [["data","participante","km","situacao","registrado_em"]];
+  const nomes = Object.fromEntries((dados.pessoas || []).map(p => [p.id, p.nome]));
+  (dados.corridas || []).slice().sort((a, b) => a.data.localeCompare(b.data) || (a.ts||0) - (b.ts||0)).forEach(c =>
+    linhas.push([ddmm(c.data) + "/2026", nomes[c.pid] || c.nome || "", String(c.km).replace(".", ","), c.apagado ? "apagado" : "valido", c.ts ? new Date(c.ts).toLocaleString("pt-BR") : ""]));
+  const csv = "\ufeff" + linhas.map(l => l.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"}));
+  a.download = "desafio-500km-outubro.csv"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+$("fSave").onclick = addRun;
+$("fKm").addEventListener("keydown", e => { if (e.key === "Enter") addRun(); });
+$("pAdd").onclick = addPerson;
+$("pName").addEventListener("keydown", e => { if (e.key === "Enter") addPerson(); });
+$("tokOk").onclick = salvarChave;
+$("tok").addEventListener("keydown", e => { if (e.key === "Enter") salvarChave(); });
+$("tokSair").onclick = () => { if (confirm("Esquecer a chave neste aparelho?")) { store.del("gh_token500"); render(); } };
+$("csv").onclick = baixarCSV;
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-rm],[data-del]"); if (!t) return;
+  if (t.dataset.rm) removePerson(t.dataset.rm); else deleteRun(t.dataset.del);
+});
+
+/* ---------- início ---------- */
+$("fDate").value = clampDate(localISO());
+try { const c = JSON.parse(store.get("cache500") || "null"); if (c) { aplicar(c); $("sync").textContent = "Carregando…"; } } catch (e) {}
+render();
+if (!configured) {
+  $("notice").textContent = "Publique esta página no GitHub Pages (ou preencha owner e repo no CONFIG) para ela ler e gravar os dados.";
+} else {
+  carregar();
+  setInterval(carregar, token() ? 60000 : 150000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) carregar(); });
+}
+</script>
+</body>
+</html>
