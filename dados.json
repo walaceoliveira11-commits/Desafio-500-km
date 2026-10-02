@@ -10,7 +10,8 @@
    "id": "c1x4ueyl",
    "nome": "Participante",
    "cor": "#E0A100",
-   "criado": "2026-10-02T21:27:21.195Z"
+   "criado": "2026-10-02T21:27:21.195Z",
+   "removido": "2026-10-02T21:38:28.448Z"
   }
  ],
  "corridas": [
@@ -28,7 +29,8 @@
    "pid": "c1x4ueyl",
    "nome": "Participante",
    "km": 2,
-   "ts": 1790976461776
+   "ts": 1790976461776,
+   "apagado": "2026-10-02T21:38:28.448Z"
   }
  ]
 }
